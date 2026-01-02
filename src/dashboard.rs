@@ -175,16 +175,25 @@ impl Dashboard {
     fn show_recipes_tab(&mut self, ctx: &egui::Context) {
         // Left panel - recipe list
         egui::SidePanel::left("recipe_list")
+            .resizable(true)
+            .default_width(250.0)
             .min_width(200.0)
-            .max_width(300.0)
+            .max_width(400.0)
             .show(ctx, |ui| {
-                ui.heading("Recipes");
+                ui.add_space(10.0);
+                ui.heading("📝 Recipes");
                 ui.add_space(10.0);
                 
                 // New recipe button
+                ui.label("Create New Recipe:");
                 ui.horizontal(|ui| {
-                    ui.text_edit_singleline(&mut self.new_recipe_name);
-                    if ui.button("➕ Add").clicked() && !self.new_recipe_name.trim().is_empty() {
+                    let available_width = ui.available_width();
+                    let edit = egui::TextEdit::singleline(&mut self.new_recipe_name)
+                        .hint_text("Recipe name...");
+                    
+                    ui.add_sized([available_width - 60.0, 20.0], edit);
+                    
+                    if ui.button("➕").clicked() && !self.new_recipe_name.trim().is_empty() {
                         let recipe = Recipe::new(self.new_recipe_name.trim());
                         let id = recipe.id;
                         self.recipe_manager.lock().unwrap().add_recipe(recipe).ok();
@@ -194,7 +203,9 @@ impl Dashboard {
                     }
                 });
                 
+                ui.add_space(10.0);
                 ui.separator();
+                ui.add_space(5.0);
                 
                 // Recipe list
                 egui::ScrollArea::vertical().show(ui, |ui| {
