@@ -19,6 +19,7 @@ use ninepaste::{
     tray::TrayManager,
     hotkeys::{HotkeyManager, HotkeyAction},
     clipboard::ClipboardEvent,
+    ipc::{IpcServer, IpcCommand},
 };
 
 #[derive(Parser)]
@@ -169,6 +170,11 @@ async fn run_background_service() -> Result<()> {
     let mut tray_manager = TrayManager::new();
     let mut tray_result = tray_manager.start();
     
+    // Start IPC server for dashboard communication
+    let ipc_server = IpcServer::new();
+    let mut ipc_rx = ipc_server.start();
+    let active_recipe_for_ipc = Arc::clone(&active_recipe);
+    
     println!("9Paste is running in the background.");
     println!("Press Ctrl+C to stop.");
     
@@ -199,6 +205,35 @@ async fn run_background_service() -> Result<()> {
                     }
                     ClipboardEvent::Error(err) => {
                         error!("Clipboard error: {}", err);
+                    }
+                }
+            }
+            
+            // Handle IPC commands from dashboard
+            Some(cmd) = async {
+                if let Some(ref mut rx) = ipc_rx {
+                    rx.recv().await
+                } else {
+                    std::future::pending().await
+                }
+            } => {
+                match cmd {
+                    IpcCommand::ReloadRecipe => {
+                        // Reload active recipe from disk
+                        if let Ok(rm) = RecipeManager::new() {
+                            let new_active = rm.get_active_recipe().cloned();
+                            let mut current = active_recipe_for_ipc.lock().unwrap();
+                            
+                            if let Some(ref recipe) = new_active {
+                                println!("📝 Active recipe: {}", recipe.name);
+                            } else {
+                                println!("📝 Recipe deactivated");
+                            }
+                            *current = new_active;
+                        }
+                    }
+                    IpcCommand::Ping => {
+                        // Just a ping, nothing to do
                     }
                 }
             }
@@ -266,11 +301,27 @@ async fn run_background_service() -> Result<()> {
         }
     }
     
+    // Graceful shutdown - stop components in order
+    println!("Shutting down...");
+    
+    // Stop clipboard first to prevent any clipboard operations blocking us
     clipboard_manager.stop_monitoring();
+    
     if let Some(ref hm) = hotkey_manager {
         hm.stop();
     }
+    
+    ipc_server.stop();
     tray_manager.stop();
+    
+    // Use a spawn to force exit after a timeout in case something hangs
+    tokio::spawn(async {
+        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+        std::process::exit(0);
+    });
+    
+    // Give a brief moment for clean shutdown
+    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
     
     println!("9Paste stopped.");
     Ok(())

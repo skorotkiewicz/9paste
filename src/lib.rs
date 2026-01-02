@@ -10,6 +10,7 @@ pub mod transformers;
 pub mod tray;
 pub mod dashboard;
 pub mod hotkeys;
+pub mod ipc;
 
 pub use clipboard::ClipboardManager;
 pub use config::Config;

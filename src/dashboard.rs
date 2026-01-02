@@ -8,6 +8,7 @@ use std::sync::{Arc, Mutex};
 use crate::recipe::{Recipe, RecipeManager, Transformation};
 use crate::config::Config;
 use crate::clipboard::ClipboardManager;
+use crate::ipc::{IpcClient, IpcCommand};
 
 /// Dashboard application state
 pub struct Dashboard {
@@ -256,11 +257,15 @@ impl Dashboard {
                     if recipe.is_active {
                         if ui.button("⏹ Deactivate").clicked() {
                             self.recipe_manager.lock().unwrap().deactivate_all().ok();
+                            // Notify background service to reload recipe
+                            IpcClient::send(IpcCommand::ReloadRecipe);
                             self.show_status("Recipe deactivated");
                         }
                     } else {
                         if ui.button("▶ Activate").clicked() {
                             self.recipe_manager.lock().unwrap().set_active(recipe_id).ok();
+                            // Notify background service to reload recipe
+                            IpcClient::send(IpcCommand::ReloadRecipe);
                             self.show_status("Recipe activated - transformations will be applied automatically");
                         }
                     }
