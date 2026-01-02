@@ -1,0 +1,71 @@
+[package]
+name = "ninepaste"
+version = "0.1.0"
+edition = "2021"
+description = "A clipboard transformer that automatically cleans, formats, and transforms clipboard text"
+license = "MIT"
+authors = ["9Paste Team"]
+
+[[bin]]
+name = "9paste"
+path = "src/main.rs"
+
+[dependencies]
+# Clipboard access (cross-platform)
+arboard = "3.4"
+
+# Async runtime
+tokio = { version = "1.41", features = ["full"] }
+
+# Serialization for recipes
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Configuration management
+dirs = "5.0"
+
+# CLI parsing
+clap = { version = "4.5", features = ["derive"] }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Text processing
+unicode-normalization = "0.1"
+regex = "1.10"
+
+# Hotkey support (cross-platform)
+global-hotkey = "0.6"
+
+# GUI for dashboard (egui - cross-platform)
+eframe = "0.29"
+egui = "0.29"
+
+# UUID for recipe IDs
+uuid = { version = "1.10", features = ["v4", "serde"] }
+
+# Time handling
+chrono = { version = "0.4", features = ["serde"] }
+
+# System tray - Linux (with ksni backend)
+[target.'cfg(target_os = "linux")'.dependencies]
+tray-item = { version = "0.10", features = ["ksni"] }
+
+# System tray - macOS
+[target.'cfg(target_os = "macos")'.dependencies]
+tray-item = "0.10"
+
+# System tray - Windows
+[target.'cfg(target_os = "windows")'.dependencies]
+tray-item = "0.10"
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = "z"
+strip = true
