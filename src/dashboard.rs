@@ -4,7 +4,6 @@
 
 use eframe::egui;
 use std::sync::{Arc, Mutex};
-use tracing::info;
 
 use crate::recipe::{Recipe, RecipeManager, Transformation};
 use crate::config::Config;
@@ -233,7 +232,7 @@ impl Dashboard {
     }
     
     fn show_recipe_editor(&mut self, ui: &mut egui::Ui, recipe_id: uuid::Uuid) {
-        let mut recipe_manager = self.recipe_manager.lock().unwrap();
+        let recipe_manager = self.recipe_manager.lock().unwrap();
         
         let recipe_clone = recipe_manager.get_recipe(recipe_id).cloned();
         drop(recipe_manager);

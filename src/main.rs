@@ -6,7 +6,7 @@
 use std::sync::{Arc, Mutex};
 use anyhow::{Result, Context};
 use clap::{Parser, Subcommand};
-use tracing::{info, warn, error, Level};
+use tracing::{info, error, Level};
 use tracing_subscriber::FmtSubscriber;
 
 use ninepaste::{
@@ -63,7 +63,7 @@ enum Commands {
 #[tokio::main]
 async fn main() -> Result<()> {
     // Initialize logging
-    let subscriber = FmtSubscriber::builder()
+    let _subscriber = FmtSubscriber::builder()
         .with_max_level(Level::INFO)
         .with_target(false)
         .compact()
