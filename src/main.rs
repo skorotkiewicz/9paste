@@ -4,6 +4,7 @@
 //! Create reusable "recipes" to standardize pasting.
 
 use std::sync::{Arc, Mutex};
+use std::process::Command;
 use anyhow::{Result, Context};
 use clap::{Parser, Subcommand};
 use tracing::{info, error, Level};
@@ -101,6 +102,29 @@ fn run_dashboard() -> Result<()> {
     Ok(())
 }
 
+/// Spawn dashboard as a separate process (used when running in background mode)
+fn spawn_dashboard() {
+    // Get the current executable path
+    match std::env::current_exe() {
+        Ok(exe_path) => {
+            match Command::new(&exe_path)
+                .arg("dashboard")
+                .spawn()
+            {
+                Ok(_child) => {
+                    info!("Dashboard spawned successfully");
+                }
+                Err(e) => {
+                    error!("Failed to spawn dashboard: {}", e);
+                }
+            }
+        }
+        Err(e) => {
+            error!("Failed to get executable path: {}", e);
+        }
+    }
+}
+
 /// Run the background clipboard monitoring service
 async fn run_background_service() -> Result<()> {
     info!("Starting 9Paste background service...");
@@ -154,6 +178,10 @@ async fn run_background_service() -> Result<()> {
         println!("No active recipe. Set one in the dashboard.");
     }
     
+    // Debounce for hotkeys to prevent double-firing
+    let mut last_hotkey_time = std::time::Instant::now() - std::time::Duration::from_secs(1);
+    const HOTKEY_DEBOUNCE_MS: u128 = 300;
+    
     // Main event loop
     loop {
         tokio::select! {
@@ -183,6 +211,13 @@ async fn run_background_service() -> Result<()> {
                     std::future::pending().await
                 }
             } => {
+                // Debounce: ignore if triggered too quickly
+                let now = std::time::Instant::now();
+                if now.duration_since(last_hotkey_time).as_millis() < HOTKEY_DEBOUNCE_MS {
+                    continue;
+                }
+                last_hotkey_time = now;
+                
                 match action {
                     HotkeyAction::ToggleTransformation => {
                         let enabled = clipboard_manager.is_transform_enabled();
@@ -193,8 +228,7 @@ async fn run_background_service() -> Result<()> {
                         println!("Quick menu not yet implemented");
                     }
                     HotkeyAction::OpenDashboard => {
-                        // Would spawn dashboard in a new window
-                        println!("Opening dashboard...");
+                        spawn_dashboard();
                     }
                 }
             }
@@ -218,7 +252,7 @@ async fn run_background_service() -> Result<()> {
                         clipboard_manager.set_transform_enabled(!enabled);
                     }
                     TrayCommand::OpenDashboard => {
-                        println!("Opening dashboard...");
+                        spawn_dashboard();
                     }
                     _ => {}
                 }
