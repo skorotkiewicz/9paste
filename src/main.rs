@@ -314,17 +314,9 @@ async fn run_background_service() -> Result<()> {
     ipc_server.stop();
     tray_manager.stop();
     
-    // Use a spawn to force exit after a timeout in case something hangs
-    tokio::spawn(async {
-        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-        std::process::exit(0);
-    });
-    
-    // Give a brief moment for clean shutdown
-    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
-    
     println!("9Paste stopped.");
-    Ok(())
+    
+    std::process::exit(0);
 }
 
 /// Apply a recipe to clipboard content
