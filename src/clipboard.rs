@@ -6,6 +6,8 @@ use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
 use std::time::Duration;
 use anyhow::{Result, Context};
 use arboard::Clipboard;
+#[cfg(target_os = "linux")]
+use arboard::SetExtLinux;
 use tokio::sync::mpsc;
 use tracing::{debug, error, info};
 
@@ -59,6 +61,21 @@ impl ClipboardManager {
     }
     
     /// Set the clipboard text
+    /// On Linux, this waits for the clipboard manager to take ownership
+    #[cfg(target_os = "linux")]
+    pub fn set_text(text: &str) -> Result<()> {
+        let mut clipboard = Clipboard::new()
+            .context("Failed to access clipboard")?;
+        
+        // Use the Set builder with wait() for proper handover to clipboard manager on Linux
+        clipboard.set()
+            .wait()
+            .text(text.to_string())
+            .context("Failed to set clipboard text")
+    }
+    
+    /// Set the clipboard text (non-Linux platforms)
+    #[cfg(not(target_os = "linux"))]
     pub fn set_text(text: &str) -> Result<()> {
         let mut clipboard = Clipboard::new()
             .context("Failed to access clipboard")?;
