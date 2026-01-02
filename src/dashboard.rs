@@ -138,6 +138,8 @@ impl eframe::App for Dashboard {
                             config.auto_transform = self.transform_enabled;
                             config.save().ok();
                         } // config guard dropped here
+
+                        IpcClient::send(IpcCommand::ToggleTransformation);
                         self.show_status(if self.transform_enabled { 
                             "Transformation enabled" 
                         } else { 

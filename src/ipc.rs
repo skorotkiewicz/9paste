@@ -18,6 +18,8 @@ pub const IPC_PORT: u16 = 9549;
 pub enum IpcCommand {
     /// Reload the active recipe from disk
     ReloadRecipe,
+    /// Toggle transformation
+    ToggleTransformation,
     /// Ping to check if service is running
     Ping,
 }
@@ -66,6 +68,7 @@ impl IpcServer {
                                 let cmd_str = String::from_utf8_lossy(&buf[..n]);
                                 let command = match cmd_str.trim() {
                                     "RELOAD" => Some(IpcCommand::ReloadRecipe),
+                                    "TRANSFORM" => Some(IpcCommand::ToggleTransformation),
                                     "PING" => {
                                         // Respond to ping
                                         let _ = stream.write_all(b"PONG");
@@ -115,6 +118,7 @@ impl IpcClient {
     pub fn send(command: IpcCommand) -> bool {
         let cmd_str = match command {
             IpcCommand::ReloadRecipe => "RELOAD",
+            IpcCommand::ToggleTransformation => "TRANSFORM",
             IpcCommand::Ping => "PING",
         };
         

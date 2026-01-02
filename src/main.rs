@@ -232,6 +232,11 @@ async fn run_background_service() -> Result<()> {
                             *current = new_active;
                         }
                     }
+                    IpcCommand::ToggleTransformation => {
+                        let enabled = clipboard_manager.is_transform_enabled();
+                        clipboard_manager.set_transform_enabled(!enabled);
+                        println!("Transformation: {}", if !enabled { "enabled" } else { "disabled" });
+                    }
                     IpcCommand::Ping => {
                         // Just a ping, nothing to do
                     }
@@ -285,6 +290,7 @@ async fn run_background_service() -> Result<()> {
                     TrayCommand::ToggleTransformation => {
                         let enabled = clipboard_manager.is_transform_enabled();
                         clipboard_manager.set_transform_enabled(!enabled);
+                        println!("Transformation: {}", if !enabled { "enabled" } else { "disabled" });
                     }
                     TrayCommand::OpenDashboard => {
                         spawn_dashboard();
