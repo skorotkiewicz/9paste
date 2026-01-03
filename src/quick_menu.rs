@@ -56,6 +56,15 @@ impl QuickMenu {
 
 impl eframe::App for QuickMenu {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // Apply theme from config
+        if let Ok(config) = Config::load() {
+            match config.theme.as_str() {
+                "light" => ctx.set_visuals(egui::Visuals::light()),
+                "dark" => ctx.set_visuals(egui::Visuals::dark()),
+                _ => {} // "system" - use default
+            }
+        }
+        
         if self.should_close {
             ctx.send_viewport_cmd(egui::ViewportCommand::Close);
             return;

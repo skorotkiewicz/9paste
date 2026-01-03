@@ -107,6 +107,16 @@ impl Dashboard {
 
 impl eframe::App for Dashboard {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // Apply theme from config
+        {
+            let config = self.config.lock().unwrap();
+            match config.theme.as_str() {
+                "light" => ctx.set_visuals(egui::Visuals::light()),
+                "dark" => ctx.set_visuals(egui::Visuals::dark()),
+                _ => {} // "system" - use default
+            }
+        }
+        
         // Clear old status messages
         if let Some((_, time)) = &self.status_message {
             if time.elapsed() > std::time::Duration::from_secs(3) {

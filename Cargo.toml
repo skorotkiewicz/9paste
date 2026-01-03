@@ -1,6 +1,6 @@
 [package]
 name = "ninepaste"
-version = "0.1.0"
+version = "0.1.2"
 edition = "2021"
 description = "A clipboard transformer that automatically cleans, formats, and transforms clipboard text"
 license = "MIT"
