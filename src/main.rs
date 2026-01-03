@@ -338,6 +338,11 @@ async fn run_background_service() -> Result<()> {
                     HotkeyAction::ToggleTransformation => {
                         let enabled = clipboard_manager.is_transform_enabled();
                         clipboard_manager.set_transform_enabled(!enabled);
+                        // Save to config
+                        if let Ok(mut cfg) = Config::load() {
+                            cfg.auto_transform = !enabled;
+                            let _ = cfg.save();
+                        }
                         println!("Transformation: {}", if !enabled { "enabled" } else { "disabled" });
                     }
                     HotkeyAction::OpenQuickMenu => {
@@ -366,6 +371,11 @@ async fn run_background_service() -> Result<()> {
                     TrayCommand::ToggleTransformation => {
                         let enabled = clipboard_manager.is_transform_enabled();
                         clipboard_manager.set_transform_enabled(!enabled);
+                        // Save to config
+                        if let Ok(mut cfg) = Config::load() {
+                            cfg.auto_transform = !enabled;
+                            let _ = cfg.save();
+                        }
                         println!("Transformation: {}", if !enabled { "enabled" } else { "disabled" });
                     }
                     TrayCommand::OpenDashboard => {
