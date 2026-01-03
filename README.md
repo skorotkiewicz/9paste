@@ -13,11 +13,11 @@ A **privacy-focused** clipboard transformer that automatically cleans, formats, 
 <details>
 <summary>More screenshots</summary>
 
-### History Tab
-![History](assets/screenshot_history.png)
-
 ### Settings
 ![Settings](assets/screenshot_settings.png)
+
+### History Tab
+![History](assets/screenshot_history.png)
 
 ### Quick Menu
 ![Quick Menu](assets/screenshot_quick_menu.png)
