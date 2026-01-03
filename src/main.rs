@@ -216,8 +216,18 @@ async fn run_background_service() -> Result<()> {
     
     // History manager for recording transformations
     let mut history_manager = if config.keep_history {
-        HistoryManager::new(config.max_history_size).ok()
+        match HistoryManager::new(config.max_history_size) {
+            Ok(hm) => {
+                info!("History manager initialized (max {} entries)", config.max_history_size);
+                Some(hm)
+            }
+            Err(e) => {
+                error!("Failed to create history manager: {}", e);
+                None
+            }
+        }
     } else {
+        info!("History disabled in config");
         None
     };
     
@@ -257,9 +267,12 @@ async fn run_background_service() -> Result<()> {
                                 timestamp: chrono::Utc::now(),
                             };
                             drop(recipe_info);
-                            if let Err(e) = hm.add(entry) {
-                                error!("Failed to save history: {}", e);
+                            match hm.add(entry) {
+                                Ok(_) => info!("Saved to history"),
+                                Err(e) => error!("Failed to save history: {}", e),
                             }
+                        } else {
+                            info!("History manager not available, skipping history save");
                         }
                         
                         if config.show_notifications {

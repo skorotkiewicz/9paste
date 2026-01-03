@@ -579,6 +579,7 @@ impl Dashboard {
         let mut action_clear = false;
         let mut action_refresh = false;
         let mut copy_text: Option<String> = None;
+        let mut remove_index: Option<usize> = None;
         
         // Clone entries to avoid borrow issues
         let entries: Vec<_> = self.history_manager
@@ -626,6 +627,11 @@ impl Dashboard {
                                 }
                                 
                                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                    // Delete button
+                                    if ui.small_button("🗑").clicked() {
+                                        remove_index = Some(i);
+                                    }
+                                    
                                     // Copy transformed button
                                     if let Some(ref transformed) = entry.transformed {
                                         if ui.small_button("📋 Copy Result").clicked() {
@@ -699,6 +705,14 @@ impl Dashboard {
         if let Some(text) = copy_text {
             if ClipboardManager::set_text_background(&text).is_ok() {
                 self.show_status("Copied to clipboard");
+            }
+        }
+        
+        if let Some(idx) = remove_index {
+            if let Some(ref mut hm) = self.history_manager {
+                if hm.remove(idx).is_ok() {
+                    self.show_status("Entry removed");
+                }
             }
         }
     }

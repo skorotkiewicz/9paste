@@ -193,6 +193,16 @@ impl HistoryManager {
         &self.entries
     }
     
+    /// Remove a specific entry by index
+    pub fn remove(&mut self, index: usize) -> Result<()> {
+        if index < self.entries.len() {
+            self.entries.remove(index);
+            self.save()
+        } else {
+            Ok(())
+        }
+    }
+    
     /// Clear all history
     pub fn clear(&mut self) -> Result<()> {
         self.entries.clear();

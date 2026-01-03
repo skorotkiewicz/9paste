@@ -7,6 +7,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::recipe::RecipeManager;
 use crate::clipboard::ClipboardManager;
+use crate::config::{Config, HistoryManager, HistoryEntry};
 
 /// Quick Menu application state
 pub struct QuickMenu {
@@ -111,6 +112,23 @@ impl eframe::App for QuickMenu {
                         if ui.button(label).clicked() {
                             if let Ok(text) = ClipboardManager::get_text() {
                                 let transformed = recipe.apply(&text);
+                                
+                                // Save to history
+                                if let Ok(config) = Config::load() {
+                                    if config.keep_history {
+                                        if let Ok(mut hm) = HistoryManager::new(config.max_history_size) {
+                                            let entry = HistoryEntry {
+                                                original: text.clone(),
+                                                transformed: Some(transformed.clone()),
+                                                recipe_id: Some(recipe.id.to_string()),
+                                                recipe_name: Some(recipe.name.clone()),
+                                                timestamp: chrono::Utc::now(),
+                                            };
+                                            let _ = hm.add(entry);
+                                        }
+                                    }
+                                }
+                                
                                 // Use non-blocking clipboard set so we can close immediately
                                 let _ = ClipboardManager::set_text_background(&transformed);
                             }
