@@ -1,6 +1,4 @@
-# 9Paste 🔧
-
-# ACTIVE DEVELOPMENT - WORK IN PROGRESS
+# 9paste
 
 A **privacy-focused** clipboard transformer that automatically cleans, formats, and transforms clipboard text as you paste. Create reusable "recipes" to standardize pasting with `Ctrl+V`.
 
