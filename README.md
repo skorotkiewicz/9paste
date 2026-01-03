@@ -62,7 +62,7 @@ cargo install --path .
 **Linux (X11/Wayland):**
 ```bash
 # Debian/Ubuntu
-sudo apt install libxcb1-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev
+sudo apt install libxcb1-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev xclip
 
 # On Wayland, you may also need:
 sudo apt install libxkbcommon-dev

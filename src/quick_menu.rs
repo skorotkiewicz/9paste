@@ -111,10 +111,10 @@ impl eframe::App for QuickMenu {
                         if ui.button(label).clicked() {
                             if let Ok(text) = ClipboardManager::get_text() {
                                 let transformed = recipe.apply(&text);
-                                if ClipboardManager::set_text(&transformed).is_ok() {
-                                    self.should_close = true;
-                                }
+                                // Use non-blocking clipboard set so we can close immediately
+                                let _ = ClipboardManager::set_text_background(&transformed);
                             }
+                            self.should_close = true;
                         }
                     }
                 }

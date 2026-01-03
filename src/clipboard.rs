@@ -74,6 +74,51 @@ impl ClipboardManager {
             .context("Failed to set clipboard text")
     }
     
+    /// Set clipboard text without blocking (spawns background process)
+    /// Use this when the calling process needs to exit immediately (e.g., Quick Menu)
+    #[cfg(target_os = "linux")]
+    pub fn set_text_background(text: &str) -> Result<()> {
+        use std::process::{Command, Stdio};
+        use std::io::Write;
+        
+        // Use xclip if available (most reliable for persistence)
+        if let Ok(mut child) = Command::new("xclip")
+            .args(["-selection", "clipboard"])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+        {
+            if let Some(mut stdin) = child.stdin.take() {
+                stdin.write_all(text.as_bytes())?;
+            }
+            return Ok(());
+        }
+        
+        // Fallback to xsel
+        if let Ok(mut child) = Command::new("xsel")
+            .args(["--clipboard", "--input"])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+        {
+            if let Some(mut stdin) = child.stdin.take() {
+                stdin.write_all(text.as_bytes())?;
+            }
+            return Ok(());
+        }
+        
+        // Last resort: blocking set (will freeze until clipboard is read)
+        Self::set_text(text)
+    }
+    
+    /// Set clipboard text without blocking (non-Linux - just use normal set)
+    #[cfg(not(target_os = "linux"))]
+    pub fn set_text_background(text: &str) -> Result<()> {
+        Self::set_text(text)
+    }
+    
     /// Set the clipboard text (non-Linux platforms)
     #[cfg(not(target_os = "linux"))]
     pub fn set_text(text: &str) -> Result<()> {
