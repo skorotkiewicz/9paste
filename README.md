@@ -1,5 +1,7 @@
 # 9Paste 🔧
 
+# ACTIVE DEVELOPMENT - WORK IN PROGRESS
+
 A **privacy-focused** clipboard transformer that automatically cleans, formats, and transforms clipboard text as you paste. Create reusable "recipes" to standardize pasting with `Ctrl+V`.
 
 ![Cross-Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-blue)
@@ -45,7 +47,7 @@ Set a recipe as active and every paste is automatically transformed.
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/9paste.git
+git clone https://github.com/skorotkiewicz/9paste.git
 cd 9paste
 
 # Build release version

@@ -11,6 +11,7 @@ pub mod tray;
 pub mod dashboard;
 pub mod hotkeys;
 pub mod ipc;
+pub mod quick_menu;
 
 pub use clipboard::ClipboardManager;
 pub use config::Config;
