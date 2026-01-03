@@ -19,6 +19,9 @@ A **privacy-focused** clipboard transformer that automatically cleans, formats, 
 ### Settings
 ![Settings](assets/screenshot_settings.png)
 
+### Quick Menu
+![Quick Menu](assets/screenshot_quick_menu.png)
+
 </details>
 
 ## ✨ Features
