@@ -78,20 +78,9 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
     
     match cli.command {
-        // Some(Commands::Dashboard) => {
-        //     run_dashboard()?;
-        // }
-        // Some(Commands::QuickMenu) => {
-        //     run_quick_menu()?;
-        // }
-        // Some(Commands::Start) => {
-        //     run_background_service().await?;
-        // }
-
         Some(Commands::Dashboard) => run_dashboard()?,
         Some(Commands::QuickMenu) => run_quick_menu()?,
         Some(Commands::Start) => run_background_service().await?,
-
         Some(Commands::Apply { recipe }) => apply_recipe(&recipe)?,
         Some(Commands::List) => list_recipes()?,
         Some(Commands::Show) => show_clipboard()?,
