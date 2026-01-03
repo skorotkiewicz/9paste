@@ -15,6 +15,7 @@ use ninepaste::{
     Config,
     RecipeManager,
     Recipe,
+    config::{HistoryManager, HistoryEntry},
     dashboard::Dashboard,
     quick_menu::QuickMenu,
     tray::TrayManager,
@@ -209,10 +210,16 @@ async fn run_background_service() -> Result<()> {
     let mut tray_manager = TrayManager::new();
     let mut tray_result = tray_manager.start();
     
-    // Start IPC server for dashboard communication
     let ipc_server = IpcServer::new();
     let mut ipc_rx = ipc_server.start();
     let active_recipe_for_ipc = Arc::clone(&active_recipe);
+    
+    // History manager for recording transformations
+    let mut history_manager = if config.keep_history {
+        HistoryManager::new(config.max_history_size).ok()
+    } else {
+        None
+    };
     
     println!("9Paste is running in the background.");
     println!("Press Ctrl+C to stop.");
@@ -238,6 +245,23 @@ async fn run_background_service() -> Result<()> {
                     }
                     ClipboardEvent::Transformed { original, result } => {
                         info!("Transformed: {} -> {} chars", original.len(), result.len());
+                        
+                        // Save to history
+                        if let Some(ref mut hm) = history_manager {
+                            let recipe_info = active_recipe.lock().unwrap();
+                            let entry = HistoryEntry {
+                                original: original.clone(),
+                                transformed: Some(result.clone()),
+                                recipe_id: recipe_info.as_ref().map(|r| r.id.to_string()),
+                                recipe_name: recipe_info.as_ref().map(|r| r.name.clone()),
+                                timestamp: chrono::Utc::now(),
+                            };
+                            drop(recipe_info);
+                            if let Err(e) = hm.add(entry) {
+                                error!("Failed to save history: {}", e);
+                            }
+                        }
+                        
                         if config.show_notifications {
                             println!("✨ Clipboard transformed!");
                         }

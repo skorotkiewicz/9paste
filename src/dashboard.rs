@@ -6,7 +6,7 @@ use eframe::egui;
 use std::sync::{Arc, Mutex};
 
 use crate::recipe::{Recipe, RecipeManager, Transformation};
-use crate::config::Config;
+use crate::config::{Config, HistoryManager};
 use crate::clipboard::ClipboardManager;
 use crate::ipc::{IpcClient, IpcCommand};
 
@@ -32,6 +32,8 @@ pub struct Dashboard {
     new_recipe_name: String,
     /// Current edit mode for recipe
     editing_recipe: bool,
+    /// History manager
+    history_manager: Option<HistoryManager>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -49,6 +51,8 @@ impl Dashboard {
         config: Arc<Mutex<Config>>,
     ) -> Self {
         let transform_enabled = config.lock().unwrap().auto_transform;
+        let max_history_size = config.lock().unwrap().max_history_size;
+        let history_manager = HistoryManager::new(max_history_size).ok();
         
         Self {
             recipe_manager,
@@ -61,6 +65,7 @@ impl Dashboard {
             status_message: None,
             new_recipe_name: String::new(),
             editing_recipe: false,
+            history_manager,
         }
     }
     
@@ -570,17 +575,132 @@ impl Dashboard {
     }
     
     fn show_history_tab(&mut self, ctx: &egui::Context) {
+        // Track actions to perform after UI rendering
+        let mut action_clear = false;
+        let mut action_refresh = false;
+        let mut copy_text: Option<String> = None;
+        
+        // Clone entries to avoid borrow issues
+        let entries: Vec<_> = self.history_manager
+            .as_ref()
+            .map(|hm| hm.get_all().to_vec())
+            .unwrap_or_default();
+        let has_history = self.history_manager.is_some();
+        
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("📋 Clipboard History");
-            ui.add_space(10.0);
-            ui.label("(History entries will appear here when transformations are applied)");
+            ui.horizontal(|ui| {
+                ui.heading("📋 Clipboard History");
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if ui.button("� Clear All").clicked() {
+                        action_clear = true;
+                    }
+                    if ui.button("🔄 Refresh").clicked() {
+                        action_refresh = true;
+                    }
+                });
+            });
             
-            // TODO: Implement history view
-            ui.add_space(20.0);
-            if ui.button("Clear History").clicked() {
-                self.show_status("History cleared");
+            ui.add_space(10.0);
+            ui.separator();
+            ui.add_space(5.0);
+            
+            if !has_history {
+                ui.centered_and_justified(|ui| {
+                    ui.label("Failed to load history.");
+                });
+            } else if entries.is_empty() {
+                ui.centered_and_justified(|ui| {
+                    ui.label("No history entries yet.\nTransformations will appear here.");
+                });
+            } else {
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    for (i, entry) in entries.iter().enumerate() {
+                        ui.group(|ui| {
+                            ui.horizontal(|ui| {
+                                // Timestamp and recipe name
+                                let time_str = entry.timestamp.format("%Y-%m-%d %H:%M:%S").to_string();
+                                ui.label(format!("🕐 {}", time_str));
+                                
+                                if let Some(ref name) = entry.recipe_name {
+                                    ui.label(format!("📝 {}", name));
+                                }
+                                
+                                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                    // Copy transformed button
+                                    if let Some(ref transformed) = entry.transformed {
+                                        if ui.small_button("📋 Copy Result").clicked() {
+                                            copy_text = Some(transformed.clone());
+                                        }
+                                    }
+                                    
+                                    // Copy original button
+                                    if ui.small_button("📄 Copy Original").clicked() {
+                                        copy_text = Some(entry.original.clone());
+                                    }
+                                });
+                            });
+                            
+                            ui.add_space(5.0);
+                            
+                            // Show preview of original text
+                            let preview_len = 100.min(entry.original.len());
+                            let preview = if entry.original.len() > 100 {
+                                format!("{}...", &entry.original[..preview_len])
+                            } else {
+                                entry.original.clone()
+                            };
+                            
+                            ui.horizontal(|ui| {
+                                ui.label("Original:");
+                                ui.add(egui::Label::new(preview).wrap());
+                            });
+                            
+                            // Show preview of transformed text if different
+                            if let Some(ref transformed) = entry.transformed {
+                                if transformed != &entry.original {
+                                    let t_preview_len = 100.min(transformed.len());
+                                    let t_preview = if transformed.len() > 100 {
+                                        format!("{}...", &transformed[..t_preview_len])
+                                    } else {
+                                        transformed.clone()
+                                    };
+                                    
+                                    ui.horizontal(|ui| {
+                                        ui.label("Result:");
+                                        ui.add(egui::Label::new(t_preview).wrap());
+                                    });
+                                }
+                            }
+                        });
+                        
+                        if i < entries.len() - 1 {
+                            ui.add_space(5.0);
+                        }
+                    }
+                });
             }
         });
+        
+        // Handle actions after UI
+        if action_clear {
+            if let Some(ref mut hm) = self.history_manager {
+                if hm.clear().is_ok() {
+                    self.show_status("History cleared");
+                }
+            }
+        }
+        
+        if action_refresh {
+            let max_size = self.config.lock().unwrap().max_history_size;
+            self.history_manager = HistoryManager::new(max_size).ok();
+            self.show_status("History refreshed");
+        }
+        
+        if let Some(text) = copy_text {
+            if ClipboardManager::set_text_background(&text).is_ok() {
+                self.show_status("Copied to clipboard");
+            }
+        }
     }
     
     fn show_about_tab(&mut self, ctx: &egui::Context) {
