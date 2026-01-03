@@ -16,6 +16,7 @@ use ninepaste::{
     RecipeManager,
     Recipe,
     dashboard::Dashboard,
+    quick_menu::QuickMenu,
     tray::TrayManager,
     hotkeys::{HotkeyManager, HotkeyAction},
     clipboard::ClipboardEvent,
@@ -39,6 +40,9 @@ enum Commands {
     
     /// Start the background service (clipboard monitoring)
     Start,
+
+    /// Open the quick menu
+    QuickMenu,
     
     /// Apply a recipe to current clipboard content
     Apply {
@@ -74,8 +78,20 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
     
     match cli.command {
+        // Some(Commands::Dashboard) => {
+        //     run_dashboard()?;
+        // }
+        // Some(Commands::QuickMenu) => {
+        //     run_quick_menu()?;
+        // }
+        // Some(Commands::Start) => {
+        //     run_background_service().await?;
+        // }
+
         Some(Commands::Dashboard) => run_dashboard()?,
+        Some(Commands::QuickMenu) => run_quick_menu()?,
         Some(Commands::Start) => run_background_service().await?,
+
         Some(Commands::Apply { recipe }) => apply_recipe(&recipe)?,
         Some(Commands::List) => list_recipes()?,
         Some(Commands::Show) => show_clipboard()?,
@@ -103,6 +119,17 @@ fn run_dashboard() -> Result<()> {
     Ok(())
 }
 
+/// Run the quick menu GUI
+fn run_quick_menu() -> Result<()> {
+    info!("Starting 9Paste quick menu...");
+    
+    let recipe_manager = Arc::new(Mutex::new(RecipeManager::new()?));
+    QuickMenu::run(recipe_manager)
+        .map_err(|e| anyhow::anyhow!("Quick Menu error: {}", e))?;
+    
+    Ok(())
+}
+
 /// Spawn dashboard as a separate process (used when running in background mode)
 fn spawn_dashboard() {
     // Get the current executable path
@@ -117,6 +144,29 @@ fn spawn_dashboard() {
                 }
                 Err(e) => {
                     error!("Failed to spawn dashboard: {}", e);
+                }
+            }
+        }
+        Err(e) => {
+            error!("Failed to get executable path: {}", e);
+        }
+    }
+}
+
+/// Spawn quick menu as a separate process
+fn spawn_quick_menu() {
+    // Get the current executable path
+    match std::env::current_exe() {
+        Ok(exe_path) => {
+            match Command::new(&exe_path)
+                .arg("quick-menu")
+                .spawn()
+            {
+                Ok(_child) => {
+                    info!("Quick menu spawned successfully");
+                }
+                Err(e) => {
+                    error!("Failed to spawn quick menu: {}", e);
                 }
             }
         }
@@ -265,7 +315,7 @@ async fn run_background_service() -> Result<()> {
                         println!("Transformation: {}", if !enabled { "enabled" } else { "disabled" });
                     }
                     HotkeyAction::OpenQuickMenu => {
-                        println!("Quick menu not yet implemented");
+                        spawn_quick_menu();
                     }
                     HotkeyAction::OpenDashboard => {
                         spawn_dashboard();
@@ -294,6 +344,9 @@ async fn run_background_service() -> Result<()> {
                     }
                     TrayCommand::OpenDashboard => {
                         spawn_dashboard();
+                    }
+                    TrayCommand::ShowQuickMenu => {
+                        spawn_quick_menu();
                     }
                     _ => {}
                 }
