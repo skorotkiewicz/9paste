@@ -53,6 +53,12 @@ jobs:
       with:
         key: ${{ matrix.target }}
 
+    - name: Install Linux dependencies
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libdbus-1-dev pkg-config
+
     - name: Build binary
       run: cargo build --release --target ${{ matrix.target }}
 
@@ -102,6 +108,11 @@ jobs:
         
     - name: Setup cache
       uses: Swatinem/rust-cache@v2
+
+    - name: Install Linux dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libdbus-1-dev pkg-config
       
     - name: Run tests
       run: cargo test --verbose
