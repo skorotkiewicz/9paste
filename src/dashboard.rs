@@ -337,9 +337,11 @@ impl Dashboard {
                             ui.horizontal(|ui| {
                                 ui.label(format!("{}.", i + 1));
                                 ui.label(transformation.display_name());
-                                if ui.small_button("🗑").clicked() {
-                                    to_remove = Some(i);
-                                }
+                                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                    if ui.button("🗑").clicked() {
+                                        to_remove = Some(i);
+                                    }
+                                });
                             });
                         }
                         
@@ -352,26 +354,32 @@ impl Dashboard {
                     });
                 
                 columns[0].add_space(10.0);
-                columns[0].heading("Add Transformation");
+                columns[0].heading("➕ Add Transformation");
+                columns[0].add_space(5.0);
                 
                 egui::ScrollArea::vertical()
                     .id_salt("add_transform_scroll")
-                    .max_height(150.0)
+                    .max_height(300.0)
+                    .auto_shrink([false, false])
                     .show(&mut columns[0], |ui| {
+                        ui.set_width(ui.available_width());
+                        
                         // Group by category
                         for category in &[
                             "Whitespace", "Case Conversion", "Line Operations",
                             "Character Cleanup", "Content Removal", "HTML", "URL"
                         ] {
                             ui.collapsing(*category, |ui| {
-                                for t in Self::get_transformations_for_category(category) {
-                                    if ui.button(t.display_name()).clicked() {
-                                        recipe.add_transformation(t.clone());
-                                        self.recipe_manager.lock().unwrap().update_recipe(recipe.clone()).ok();
-                                        self.update_preview();
-                                        self.show_status(format!("Added: {}", t.display_name()));
+                                ui.vertical_centered_justified(|ui| {
+                                    for t in Self::get_transformations_for_category(category) {
+                                        if ui.button(t.display_name()).clicked() {
+                                            recipe.add_transformation(t.clone());
+                                            self.recipe_manager.lock().unwrap().update_recipe(recipe.clone()).ok();
+                                            self.update_preview();
+                                            self.show_status(format!("Added: {}", t.display_name()));
+                                        }
                                     }
-                                }
+                                });
                             });
                         }
                     });
@@ -383,20 +391,25 @@ impl Dashboard {
                 columns[1].label("Input:");
                 egui::ScrollArea::vertical()
                     .id_salt("input_scroll")
-                    .max_height(150.0)
+                    .max_height(200.0)
+                    .auto_shrink([false, false])
                     .show(&mut columns[1], |ui| {
-                        if ui.text_edit_multiline(&mut self.test_input).changed() {
+                        let edit = egui::TextEdit::multiline(&mut self.test_input)
+                            .desired_width(f32::INFINITY);
+                        if ui.add(edit).changed() {
                             self.update_preview();
                         }
                     });
                 
-                columns[1].add_space(5.0);
+                columns[1].add_space(10.0);
                 columns[1].label("Output:");
                 egui::ScrollArea::vertical()
                     .id_salt("output_scroll")
-                    .max_height(150.0)
+                    .max_height(200.0)
+                    .auto_shrink([false, false])
                     .show(&mut columns[1], |ui| {
                         ui.add(egui::TextEdit::multiline(&mut self.test_output)
+                            .desired_width(f32::INFINITY)
                             .interactive(false));
                     });
             });
