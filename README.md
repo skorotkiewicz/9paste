@@ -6,6 +6,21 @@ A **privacy-focused** clipboard transformer that automatically cleans, formats, 
 ![Rust](https://img.shields.io/badge/rust-1.70%2B-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
+## 📸 Screenshots
+
+![Recipe Editor](assets/screenshot_recipes.png)
+
+<details>
+<summary>More screenshots</summary>
+
+### History Tab
+![History](assets/screenshot_history.png)
+
+### Settings
+![Settings](assets/screenshot_settings.png)
+
+</details>
+
 ## ✨ Features
 
 ### 🧹 40+ Text Transformations
