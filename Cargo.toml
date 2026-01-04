@@ -1,6 +1,6 @@
 [package]
 name = "ninepaste"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2021"
 description = "A clipboard transformer that automatically cleans, formats, and transforms clipboard text"
 license = "MIT"
@@ -43,8 +43,9 @@ regex = "1.10"
 global-hotkey = "0.6"
 
 # GUI for dashboard (egui - cross-platform)
-eframe = "0.29"
-egui = "0.29"
+eframe = "0.33"
+egui = "0.33"
+egui-phosphor = "0.11"
 
 # UUID for recipe IDs
 uuid = { version = "1.10", features = ["v4", "serde"] }

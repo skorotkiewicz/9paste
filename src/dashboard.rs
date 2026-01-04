@@ -9,6 +9,7 @@ use crate::recipe::{Recipe, RecipeManager, Transformation};
 use crate::config::{Config, HistoryManager};
 use crate::clipboard::ClipboardManager;
 use crate::ipc::{IpcClient, IpcCommand};
+use egui_phosphor::regular::*;
 
 /// Dashboard application state
 pub struct Dashboard {
@@ -85,7 +86,12 @@ impl Dashboard {
         eframe::run_native(
             "9Paste",
             options,
-            Box::new(move |_cc| {
+            Box::new(move |cc| {
+                // Initialize phosphor fonts
+                let mut fonts = egui::FontDefinitions::default();
+                egui_phosphor::add_to_fonts(&mut fonts, egui_phosphor::Variant::Regular);
+                cc.egui_ctx.set_fonts(fonts);
+                
                 Ok(Box::new(Dashboard::new(recipe_manager, config)))
             }),
         )
@@ -128,26 +134,26 @@ impl eframe::App for Dashboard {
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             ui.add_space(5.0);
             ui.horizontal(|ui| {
-                ui.heading("🔧 9Paste");
+                ui.heading(format!("{} 9Paste", WRENCH));
                 ui.add_space(20.0);
                 
-                if ui.selectable_label(self.current_tab == DashboardTab::Recipes, "📝 Recipes").clicked() {
+                if ui.selectable_label(self.current_tab == DashboardTab::Recipes, format!("{} Recipes", CLIPBOARD_TEXT)).clicked() {
                     self.current_tab = DashboardTab::Recipes;
                 }
-                if ui.selectable_label(self.current_tab == DashboardTab::Settings, "⚙️ Settings").clicked() {
+                if ui.selectable_label(self.current_tab == DashboardTab::Settings, format!("{} Settings", GEAR_SIX)).clicked() {
                     self.current_tab = DashboardTab::Settings;
                 }
-                if ui.selectable_label(self.current_tab == DashboardTab::History, "📋 History").clicked() {
+                if ui.selectable_label(self.current_tab == DashboardTab::History, format!("{} History", CLIPBOARD)).clicked() {
                     self.current_tab = DashboardTab::History;
                 }
-                if ui.selectable_label(self.current_tab == DashboardTab::About, "ℹ️ About").clicked() {
+                if ui.selectable_label(self.current_tab == DashboardTab::About, format!("{} About", INFO)).clicked() {
                     self.current_tab = DashboardTab::About;
                 }
                 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     // Toggle transformation
-                    let toggle_text = if self.transform_enabled { "🟢 Active" } else { "🔴 Inactive" };
-                    if ui.toggle_value(&mut self.transform_enabled, toggle_text).changed() {
+                    let (toggle_icon, toggle_text) = if self.transform_enabled { (CHECK_CIRCLE, "Active") } else { (X_CIRCLE, "Inactive") };
+                    if ui.toggle_value(&mut self.transform_enabled, format!("{} {}", toggle_icon, toggle_text)).changed() {
                         {
                             let mut config = self.config.lock().unwrap();
                             config.auto_transform = self.transform_enabled;
@@ -170,7 +176,7 @@ impl eframe::App for Dashboard {
         if let Some((message, _)) = &self.status_message {
             egui::TopBottomPanel::bottom("status_bar").show(ctx, |ui| {
                 ui.horizontal(|ui| {
-                    ui.label("ℹ️");
+                    ui.label(INFO);
                     ui.label(message);
                 });
             });
@@ -196,7 +202,7 @@ impl Dashboard {
             .max_width(400.0)
             .show(ctx, |ui| {
                 ui.add_space(10.0);
-                ui.heading("📝 Recipes");
+                ui.heading(format!("{} Recipes", CLIPBOARD_TEXT));
                 ui.add_space(10.0);
                 
                 // New recipe button
@@ -208,7 +214,7 @@ impl Dashboard {
                     
                     ui.add_sized([available_width - 60.0, 20.0], edit);
                     
-                    if ui.button("➕").clicked() && !self.new_recipe_name.trim().is_empty() {
+                    if ui.button(PLUS).clicked() && !self.new_recipe_name.trim().is_empty() {
                         let recipe = Recipe::new(self.new_recipe_name.trim());
                         let id = recipe.id;
                         self.recipe_manager.lock().unwrap().add_recipe(recipe).ok();
@@ -232,11 +238,11 @@ impl Dashboard {
                     
                     for (id, name, icon, is_active) in recipes {
                         let selected = self.selected_recipe == Some(id);
-                        let icon_str = icon.unwrap_or_else(|| "📋".to_string());
+                        let icon_str = icon.unwrap_or_else(|| CLIPBOARD.to_string());
                         let label = format!("{} {} {}", 
                             icon_str, 
                             name,
-                            if is_active { "✓" } else { "" }
+                            if is_active { CHECK } else { "" }
                         );
                         
                         if ui.selectable_label(selected, label).clicked() {
@@ -270,12 +276,12 @@ impl Dashboard {
             // Header
             ui.horizontal(|ui| {
                 ui.heading(format!("{} {}", 
-                    recipe.icon.as_deref().unwrap_or("📋"), 
+                    recipe.icon.as_deref().unwrap_or(CLIPBOARD), 
                     &recipe.name
                 ));
                 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui.button("🗑 Delete").clicked() {
+                    if ui.button(format!("{} Delete", TRASH)).clicked() {
                         self.recipe_manager.lock().unwrap().remove_recipe(recipe_id).ok();
                         self.selected_recipe = None;
                         self.show_status("Recipe deleted");
@@ -283,14 +289,14 @@ impl Dashboard {
                     }
                     
                     if recipe.is_active {
-                        if ui.button("⏹ Deactivate").clicked() {
+                        if ui.button(format!("{} Deactivate", STOP)).clicked() {
                             self.recipe_manager.lock().unwrap().deactivate_all().ok();
                             // Notify background service to reload recipe
                             IpcClient::send(IpcCommand::ReloadRecipe);
                             self.show_status("Recipe deactivated");
                         }
                     } else {
-                        if ui.button("▶ Activate").clicked() {
+                        if ui.button(format!("{} Activate", PLAY)).clicked() {
                             self.recipe_manager.lock().unwrap().set_active(recipe_id).ok();
                             // Notify background service to reload recipe
                             IpcClient::send(IpcCommand::ReloadRecipe);
@@ -298,7 +304,7 @@ impl Dashboard {
                         }
                     }
                     
-                    if ui.button("💾 Apply Now").clicked() {
+                    if ui.button(format!("{} Apply Now", FLOPPY_DISK)).clicked() {
                         match ClipboardManager::apply_recipe(&recipe) {
                             Ok(_) => self.show_status("Clipboard transformed!"),
                             Err(e) => self.show_status(format!("Error: {}", e)),
@@ -353,7 +359,7 @@ impl Dashboard {
                                 ui.label(format!("{}.", i + 1));
                                 ui.label(transformation.display_name());
                                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                                    if ui.button("🗑").clicked() {
+                                    if ui.button(TRASH).clicked() {
                                         to_remove = Some(i);
                                     }
                                 });
@@ -369,7 +375,7 @@ impl Dashboard {
                     });
                 
                 columns[0].add_space(10.0);
-                columns[0].heading("➕ Add Transformation");
+                columns[0].heading(format!("{} Add Transformation", PLUS));
                 columns[0].add_space(5.0);
                 
                 egui::ScrollArea::vertical()
@@ -485,7 +491,7 @@ impl Dashboard {
     
     fn show_settings_tab(&mut self, ctx: &egui::Context) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("⚙️ Settings");
+            ui.heading(format!("{} Settings", GEAR_SIX));
             ui.add_space(20.0);
             
             let mut config = self.config.lock().unwrap();
@@ -600,12 +606,12 @@ impl Dashboard {
         
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.horizontal(|ui| {
-                ui.heading("📋 Clipboard History");
+                ui.heading(format!("{} Clipboard History", CLIPBOARD));
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui.button("� Clear All").clicked() {
+                    if ui.button(format!("{} Clear All", TRASH)).clicked() {
                         action_clear = true;
                     }
-                    if ui.button("🔄 Refresh").clicked() {
+                    if ui.button(format!("{} Refresh", ARROWS_CLOCKWISE)).clicked() {
                         action_refresh = true;
                     }
                 });
@@ -630,27 +636,27 @@ impl Dashboard {
                             ui.horizontal(|ui| {
                                 // Timestamp and recipe name
                                 let time_str = entry.timestamp.format("%Y-%m-%d %H:%M:%S").to_string();
-                                ui.label(format!("🕐 {}", time_str));
+                                ui.label(format!("{} {}", CLOCK, time_str));
                                 
                                 if let Some(ref name) = entry.recipe_name {
-                                    ui.label(format!("📝 {}", name));
+                                    ui.label(format!("{} {}", CLIPBOARD_TEXT, name));
                                 }
                                 
                                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                                     // Delete button
-                                    if ui.small_button("🗑").clicked() {
+                                    if ui.small_button(TRASH).clicked() {
                                         remove_index = Some(i);
                                     }
                                     
                                     // Copy transformed button
                                     if let Some(ref transformed) = entry.transformed {
-                                        if ui.small_button("📋 Copy Result").clicked() {
+                                        if ui.small_button(format!("{} Copy Result", CLIPBOARD)).clicked() {
                                             copy_text = Some(transformed.clone());
                                         }
                                     }
                                     
                                     // Copy original button
-                                    if ui.small_button("📄 Copy Original").clicked() {
+                                    if ui.small_button(format!("{} Copy Original", FILE_TEXT)).clicked() {
                                         copy_text = Some(entry.original.clone());
                                     }
                                 });
@@ -731,7 +737,7 @@ impl Dashboard {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.vertical_centered(|ui| {
                 ui.add_space(40.0);
-                ui.heading("🔧 9Paste");
+                ui.heading(format!("{} 9Paste", WRENCH));
                 ui.label("Clipboard Transformer");
                 ui.add_space(10.0);
                 ui.label(format!("Version {}", env!("CARGO_PKG_VERSION")));
@@ -748,12 +754,12 @@ impl Dashboard {
                 ui.add_space(10.0);
                 
                 let features = [
-                    "✨ 40+ text transformations",
-                    "📝 Create reusable recipes",
-                    "🔄 Auto-transform on paste",
-                    "⌨️ Global hotkey support",
-                    "🔒 100% local processing",
-                    "🖥️ Cross-platform (Linux, macOS, Windows)",
+                    format!("{} 40+ text transformations", SPARKLE),
+                    format!("{} Create reusable recipes", CLIPBOARD_TEXT),
+                    format!("{} Auto-transform on paste", ARROWS_CLOCKWISE),
+                    format!("{} Global hotkey support", KEYBOARD),
+                    format!("{} 100% local processing", LOCK),
+                    format!("{} Cross-platform (Linux, macOS, Windows)", MONITOR),
                 ];
                 
                 for feature in features {
@@ -764,7 +770,7 @@ impl Dashboard {
                 ui.separator();
                 ui.add_space(20.0);
                 
-                ui.label("🔒 Privacy First");
+                ui.label(format!("{} Privacy First", LOCK));
                 ui.label("All processing happens locally on your device.");
                 ui.label("No data is ever sent to any server.");
             });

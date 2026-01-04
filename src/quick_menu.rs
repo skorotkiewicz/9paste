@@ -8,6 +8,7 @@ use std::sync::{Arc, Mutex};
 use crate::recipe::RecipeManager;
 use crate::clipboard::ClipboardManager;
 use crate::config::{Config, HistoryManager, HistoryEntry};
+use egui_phosphor::regular::*;
 
 /// Quick Menu application state
 pub struct QuickMenu {
@@ -47,7 +48,12 @@ impl QuickMenu {
         eframe::run_native(
             "9Paste Quick Menu",
             options,
-            Box::new(move |_cc| {
+            Box::new(move |cc| {
+                // Initialize phosphor fonts
+                let mut fonts = egui::FontDefinitions::default();
+                egui_phosphor::add_to_fonts(&mut fonts, egui_phosphor::Variant::Regular);
+                cc.egui_ctx.set_fonts(fonts);
+                
                 Ok(Box::new(QuickMenu::new(recipe_manager)))
             }),
         )
@@ -77,14 +83,14 @@ impl eframe::App for QuickMenu {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.vertical_centered(|ui| {
-                ui.heading("🚀 Quick Menu");
+                ui.heading(format!("{} Quick Menu", ROCKET_LAUNCH));
             });
             
             ui.add_space(5.0);
             
             // Search box
             let search_edit = egui::TextEdit::singleline(&mut self.search_query)
-                .hint_text("🔍 Search recipes...")
+                .hint_text(format!("{} Search recipes...", MAGNIFYING_GLASS))
                 .desired_width(f32::INFINITY);
             
             let response = ui.add(search_edit);
@@ -115,7 +121,7 @@ impl eframe::App for QuickMenu {
                     });
                 } else {
                     for recipe in filtered_recipes {
-                        let icon = recipe.icon.as_deref().unwrap_or("📋");
+                        let icon = recipe.icon.as_deref().unwrap_or(CLIPBOARD);
                         let label = format!("{} {}", icon, recipe.name);
                         
                         if ui.button(label).clicked() {
