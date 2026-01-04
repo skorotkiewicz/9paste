@@ -599,7 +599,7 @@ impl Dashboard {
         
         // Clone entries to avoid borrow issues
         let entries: Vec<_> = self.history_manager
-            .as_ref()
+            .as_mut()
             .map(|hm| hm.get_all().to_vec())
             .unwrap_or_default();
         let has_history = self.history_manager.is_some();

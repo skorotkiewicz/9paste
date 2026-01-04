@@ -209,8 +209,8 @@ impl ClipboardManager {
                         let transformed = recipe.apply(&current);
                         
                         if transformed != current {
-                            // Update clipboard with transformed text
-                            if let Err(e) = Self::set_text(&transformed) {
+                            // Update clipboard with transformed text (non-blocking to avoid delays)
+                            if let Err(e) = Self::set_text_background(&transformed) {
                                 error!("Failed to set transformed clipboard: {}", e);
                                 let _ = tx.send(ClipboardEvent::Error(e.to_string())).await;
                             } else {

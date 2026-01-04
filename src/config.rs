@@ -178,6 +178,10 @@ impl HistoryManager {
     
     /// Add an entry to history
     pub fn add(&mut self, entry: HistoryEntry) -> Result<()> {
+        // Reload from disk first to pick up any changes made by other processes (e.g., dashboard)
+        // If reload fails, just use current in-memory state
+        let _ = self.reload();
+        
         self.entries.insert(0, entry);
         
         // Trim to max size
@@ -188,9 +192,22 @@ impl HistoryManager {
         self.save()
     }
     
-    /// Get all history entries
-    pub fn get_all(&self) -> &[HistoryEntry] {
+    /// Get all history entries (reloads from disk first)
+    pub fn get_all(&mut self) -> &[HistoryEntry] {
+        // Reload from disk to get latest data
+        let _ = self.reload();
         &self.entries
+    }
+    
+    /// Reload history from disk
+    pub fn reload(&mut self) -> Result<()> {
+        if self.history_path.exists() {
+            let data = fs::read_to_string(&self.history_path)
+                .context("Failed to read history file")?;
+            self.entries = serde_json::from_str(&data)
+                .context("Failed to parse history file")?;
+        }
+        Ok(())
     }
     
     /// Remove a specific entry by index
