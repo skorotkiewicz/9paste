@@ -53,6 +53,9 @@ uuid = { version = "1.10", features = ["v4", "serde"] }
 # Time handling
 chrono = { version = "0.4", features = ["serde"] }
 
+[build-dependencies]
+static_vcruntime = "3.0"
+
 # System tray - Linux (with ksni backend)
 [target.'cfg(target_os = "linux")'.dependencies]
 tray-item = { version = "0.10", features = ["ksni"] }
