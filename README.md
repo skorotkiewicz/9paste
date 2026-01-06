@@ -59,6 +59,14 @@ Set a recipe as active and every paste is automatically transformed.
 
 ## 🚀 Installation
 
+### Arch Linux (AUR)
+
+```bash
+yay -S 9paste
+# or
+paru -S 9paste
+```
+
 ### From Source
 
 ```bash
