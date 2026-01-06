@@ -38,6 +38,7 @@ pub enum Transformation {
     ReverseLines,
     AddLineNumbers,
     RemoveLineNumbers,
+    RemoveLineNumbersStuck,
     JoinLines { separator: String },
     SplitToLines { delimiter: String },
     WrapLines { width: usize },
@@ -108,6 +109,7 @@ impl Transformation {
             Self::ReverseLines => "Reverse Line Order",
             Self::AddLineNumbers => "Add Line Numbers",
             Self::RemoveLineNumbers => "Remove Line Numbers",
+            Self::RemoveLineNumbersStuck => "Remove Stuck Line Numbers",
             Self::JoinLines { .. } => "Join Lines",
             Self::SplitToLines { .. } => "Split to Lines",
             Self::WrapLines { .. } => "Wrap Lines",
@@ -146,7 +148,8 @@ impl Transformation {
             Self::ToScreamingSnakeCase | Self::ToKebabCase => "Case Conversion",
             Self::RemoveDuplicateLines | Self::SortLines | Self::SortLinesReverse |
             Self::ReverseLines | Self::AddLineNumbers | Self::RemoveLineNumbers |
-            Self::JoinLines { .. } | Self::SplitToLines { .. } | Self::WrapLines { .. } => "Line Operations",
+            Self::RemoveLineNumbersStuck | Self::JoinLines { .. } | 
+            Self::SplitToLines { .. } | Self::WrapLines { .. } => "Line Operations",
             Self::FixSmartQuotes | Self::RemoveNonAscii | Self::NormalizeUnicode |
             Self::RemoveEmojis | Self::StripFormatting => "Character Cleanup",
             Self::TabsToSpaces { .. } | Self::SpacesToTabs { .. } => "Indentation",
@@ -183,6 +186,7 @@ impl Transformation {
             Self::ReverseLines => transformers::reverse_lines(text),
             Self::AddLineNumbers => transformers::add_line_numbers(text),
             Self::RemoveLineNumbers => transformers::remove_line_numbers(text),
+            Self::RemoveLineNumbersStuck => transformers::remove_line_numbers_stuck(text),
             Self::JoinLines { separator } => transformers::join_lines(text, separator),
             Self::SplitToLines { delimiter } => transformers::split_to_lines(text, delimiter),
             Self::WrapLines { width } => transformers::wrap_lines(text, *width),

@@ -462,6 +462,7 @@ impl Dashboard {
                 Transformation::ReverseLines,
                 Transformation::AddLineNumbers,
                 Transformation::RemoveLineNumbers,
+                Transformation::RemoveLineNumbersStuck,
                 Transformation::ToUnixLineEndings,
                 Transformation::ToWindowsLineEndings,
             ],

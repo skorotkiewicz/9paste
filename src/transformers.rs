@@ -219,6 +219,16 @@ pub fn remove_line_numbers(text: &str) -> String {
         .join("\n")
 }
 
+/// Remove line numbers that are directly stuck to the line content (no separator)
+/// Handles formats like "1import React" -> "import React" or "93\t\tconst" -> "\t\tconst"
+pub fn remove_line_numbers_stuck(text: &str) -> String {
+    let re = Regex::new(r"^(\s*)\d+").unwrap();
+    text.lines()
+        .map(|line| re.replace(line, "$1").to_string())
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 /// Convert to Unix line endings (LF)
 pub fn to_unix_line_endings(text: &str) -> String {
     text.replace("\r\n", "\n").replace('\r', "\n")
@@ -443,5 +453,12 @@ mod tests {
     #[test]
     fn test_to_snake_case() {
         assert_eq!(to_snake_case("Hello World"), "hello_world");
+    }
+
+    #[test]
+    fn test_remove_line_numbers_stuck() {
+        let input = "1import React from \"react\";\n2import { useState } from \"react\";\n3\n93\t\tconst foo = 42;\n100\t\treturn foo;";
+        let expected = "import React from \"react\";\nimport { useState } from \"react\";\n\n\t\tconst foo = 42;\n\t\treturn foo;";
+        assert_eq!(remove_line_numbers_stuck(input), expected);
     }
 }
